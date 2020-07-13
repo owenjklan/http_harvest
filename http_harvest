@@ -1,0 +1,254 @@
+#!/usr/bin/python2
+from __future__ import print_function
+
+import requests
+import sys
+import time
+import random
+import argparse
+
+
+def yellow_text(text, html=False):
+    outtext = "\033[33m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def green_text(text, html=False):
+    outtext = "\033[32m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def red_text(text, html=False):
+    outtext = "\033[31m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def cyan_text(text, html=False):
+    outtext = "\033[36m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def magenta_text(text, html=False):
+    outtext = "\033[35m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def usage(progname):
+    print("Usage:   {} webaddress".format(progname))
+
+
+def format_ip_from_parts(parts_list):
+    return ".".join(parts_list)
+
+
+class CapturedHttp(object):
+    def __init__(self, ipaddr, response):
+        self.ipaddr = ipaddr
+        self.status_code = response.status_code
+        try:
+            self.server = response.headers['Server']
+        except KeyError:
+            self.server = "Not Available"
+        self.cookies = response.cookies
+        self.headers = response.headers
+
+    def __str__(self):
+        try:
+            outstr = "[{:17s}] <{}>  ({})".format(
+                self.ipaddr, self.status_code, self.server)
+        except Exception as e:
+            outstr = "An exception occurred: {}".format(e)
+        return outstr
+
+
+def get_geolocation(ip):
+    GEOIP_URL = "https://ipinfo.io/{}/json".format(ip.strip())
+    print(yellow_text("Making GEOIP request: {}".format(GEOIP_URL)))
+    response = requests.get(GEOIP_URL)
+
+    if response.status_code != 200:
+        country = red_text("Error! [ {} ]".format(response.status_code))
+    else:
+        r = response.json()
+        country = r['timezone']
+    return country
+
+
+class ScanAction(object):
+    next_id = 1
+
+    def __init__(self, ip, port, protocol, status_code, status_string):
+        self.id = ScanAction.next_id
+        self.ip = ip
+        self.port = port
+        self.protocol = protocol
+        self.status_code = status_code
+        self.status_string = status_string
+        self.start_time = time.time()
+
+        ScanAction.next_id += 1
+
+
+class OutputHandler(object):
+    def __init__(self):
+        pass
+
+    def update_scan(self, scan):
+        pass
+
+    def finish_scan(self):
+        pass
+
+
+class InteractiveConsoleOutput(OutputHandler):
+    def __init__(self):
+        # super(InteractiveConsoleOutput, self).__init__():
+        pass
+
+
+class GrepConsoleOutput(OutputHandler):
+    def __init__(self):
+        # super(GrepConsoleOutput, self).__init__():
+        pass
+
+
+class HTMLOutput(OutputHandler):
+    def __init__(self):
+        # super(HTMLOutput, self).__init__():
+        pass
+
+
+class SQLiteOutput(OutputHandler):
+    def __init__(self):
+        # super(SQLiteOutput, self).__init__():
+        pass
+
+
+DEFAULT_TIMEOUT = 4
+DEFAULT_PORT_LIST = [80, 8080]
+timeout_used = DEFAULT_TIMEOUT
+
+
+def get_auth_details(headers):
+    try:
+        auth = headers['www-authenticate']
+    except:
+        print("No Auth Header")
+        return (None, None)
+
+    auth_type, realm_parts = auth.split(' ', 1)
+    realm = realm_parts.split('=', 1)[1]
+    return auth_type, realm
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--no-proxy", help="Disable use of proxy servers")
+    parser.add_argument(
+        "--port-list",
+        help="Specify ports to scan for HTTP. Defaults are {}".format(
+            DEFAULT_PORT_LIST))
+    parser.add_argument("--proxy-file",
+        help="Specify a file with HTTP proxy servers", type=str)
+    parser.add_argument("timeout", help="Specify connection timeout. Default is {}".format(DEFAULT_TIMEOUT))
+    parser.add_argument("target", help="IP address within range of network to scan")
+    parser.add_argument("--scan-port", help="Port to scan on", type=int, default=80)
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+
+    hosts_list = []
+    up_hosts = 0
+    target = args.target 
+    ip_parts = target.split('.')
+    copy_ip = ip_parts
+    copy_ip[3] = str(0)
+    scanned_set = set()
+
+    max_time = DEFAULT_TIMEOUT * 254
+    total_time = 0
+
+    location = get_geolocation(sys.argv[2])
+
+    print("\033[44;33;1m  HTTP Harvest Scan on {} | ".format(
+        format_ip_from_parts(copy_ip)), end='')
+    print("{}  \033[0m".format(location))
+
+    while len(scanned_set) < 254:
+        auth_type = auth_realm = None
+        host_byte = random.randint(1, 254)
+        if host_byte in scanned_set:
+            continue
+
+        status_string = ""
+        server = "???"
+        country = "???"
+        copy_ip[3] = str(host_byte)
+        try:
+            start_time = time.time()
+            print ("{:>16}:{}  |  ".format(
+                format_ip_from_parts(copy_ip),
+                args.scan_port), end="")
+            sys.stdout.flush()
+            r = requests.get(
+                "http://" + format_ip_from_parts(copy_ip) + ":{}".format(args.scan_port),
+                timeout=float(args.timeout))
+
+            try:
+                server = r.headers['Server']
+            except KeyError:
+                pass
+
+            if r.status_code == 200:
+                status_string = green_text("{:^5s}".format("OK"))
+                country = get_geolocation(format_ip_from_parts(copy_ip))
+            elif r.status_code > 400 and r.status_code < 500:
+                status_string = yellow_text("{:^5s}".format(
+                    str(r.status_code)))
+                country = get_geolocation(format_ip_from_parts(copy_ip))
+                if r.status_code == 401:
+                    auth_type, auth_realm = get_auth_details(r.headers)
+
+            hosts_list.append(
+                CapturedHttp(format_ip_from_parts(copy_ip), r)
+            )
+        except requests.Timeout as e:
+            status_string = magenta_text("{:^5s}".format("T.O"))
+        except requests.ConnectionError as e:
+            status_string = red_text("{:^5s}".format("C.E"))
+        except requests.TooManyRedirects as e:
+            status_string = cyan_text("{:^5s}".format("R.L"))
+        except KeyboardInterrupt as e:
+            print("\n\n  ***  Scan Interrupted  *** ", end='')
+            print(" {}/254 hosts scanned  ***\n".format(len(scanned_set)))
+            sys.exit(1)
+
+        scan_time = time.time() - start_time
+        total_time += scan_time
+
+        print("{:5s}  {:>2.2f}s [{:^20}] ({})  {}".format(
+            status_string, scan_time, server[:19], country,
+            "" if auth_realm is None else auth_realm))
+
+        scanned_set.add(host_byte)
+
+    print("Scan took {:3.1f} minutes".format(total_time / 60))
+
+    print("\nInfo found for {} hosts".format(len(hosts_list)))
+    print("".format())
+    catches = []
+    for h in hosts_list:
+        hostdump = {}
+        hostdump['ip'] = h.ipaddr
+        hostdump['status_code'] = h.status_code
+        if h.cookies != {}:
+            hostdump['cookies'] = dict(h.cookies)
+        if h.headers != {}:
+            hostdump['headers'] = dict(h.headers)
+        catches.append(hostdump)
+
+
+if __name__ == '__main__':
+    main()
