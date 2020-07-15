@@ -61,9 +61,10 @@ class CapturedHttp(object):
         return outstr
 
 
-def get_geolocation(ip):
+def get_geolocation(ip, verbose=False):
     GEOIP_URL = "https://ipinfo.io/{}/json".format(ip.strip())
-    print(yellow_text("Making GEOIP request: {}".format(GEOIP_URL)))
+    if verbose:
+        print(yellow_text("Making GEOIP request: {}".format(GEOIP_URL)))
     response = requests.get(GEOIP_URL)
 
     if response.status_code != 200:
@@ -129,11 +130,12 @@ DEFAULT_PORT_LIST = [80, 8080]
 timeout_used = DEFAULT_TIMEOUT
 
 
-def get_auth_details(headers):
+def get_auth_details(headers, verbose=False):
     try:
         auth = headers['www-authenticate']
     except KeyError as ke:
-        print("No Auth Header: ", ke)
+        if verbose:
+            print("No Auth Header: ", ke)
         return (None, None)
 
     auth_type, realm_parts = auth.split(' ', 1)
@@ -145,6 +147,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--no-proxy", help="Disable use of proxy servers")
+    parser.add_argument(
+        "--verbose", help="More output")
     parser.add_argument(
         "--port-list",
         help="Specify ports to scan for HTTP. Defaults are {}".format(
