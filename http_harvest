@@ -132,8 +132,8 @@ timeout_used = DEFAULT_TIMEOUT
 def get_auth_details(headers):
     try:
         auth = headers['www-authenticate']
-    except:
-        print("No Auth Header")
+    except KeyError as ke:
+        print("No Auth Header: ", ke)
         return (None, None)
 
     auth_type, realm_parts = auth.split(' ', 1)
@@ -150,24 +150,30 @@ def parse_args():
         help="Specify ports to scan for HTTP. Defaults are {}".format(
             DEFAULT_PORT_LIST))
     parser.add_argument("--proxy-file",
-        help="Specify a file with HTTP proxy servers", type=str)
-    parser.add_argument("timeout", help="Specify connection timeout. Default is {}".format(DEFAULT_TIMEOUT))
-    parser.add_argument("target", help="IP address within range of network to scan")
-    parser.add_argument("--scan-port", help="Port to scan on", type=int, default=80)
+                        help="Specify a file with HTTP proxy servers",
+                        type=str)
+    parser.add_argument("timeout",
+                        help="Specify connection timeout. Default is {}".format(
+                            DEFAULT_TIMEOUT))
+    parser.add_argument(
+        "target", help="IP address within range of network to scan")
+    parser.add_argument(
+        "--scan-port", help="Port to scan on", type=int, default=80)
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
 
     hosts_list = []
-    up_hosts = 0
-    target = args.target 
+    # up_hosts = 0
+    target = args.target
     ip_parts = target.split('.')
     copy_ip = ip_parts
     copy_ip[3] = str(0)
     scanned_set = set()
 
-    max_time = DEFAULT_TIMEOUT * 254
+    # max_time = DEFAULT_TIMEOUT * 254
     total_time = 0
 
     location = get_geolocation(sys.argv[2])
