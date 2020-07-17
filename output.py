@@ -1,5 +1,23 @@
 class OutputHandler(object):
-    def __init__(self):
+    def __init__(self, scan):
+        self.scan = scan
+
+    def start_scan(self, scan):
+        pass
+
+    def update_scan(self, scan):
+        pass
+
+    def finish_scan(self):
+        pass
+
+
+class DefaultOutput(OutputHandler):
+    def __init__(self, scan):
+        super(DefaultOutput, self).__init__(scan)
+        self.scan = scan
+
+    def start_scan(self, scan):
         pass
 
     def update_scan(self, scan):
