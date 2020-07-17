@@ -89,12 +89,6 @@ def debug_banner(text, html=False):
     return outtext
 
 
-
-
-def usage(progname):
-    print("Usage:   {} webaddress".format(progname))
-
-
 # Format to dotted-quad
 def format_ip_from_parts(parts_list):
     return ".".join(parts_list)
