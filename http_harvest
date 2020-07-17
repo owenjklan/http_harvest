@@ -5,9 +5,10 @@ import requests
 import sys
 import time
 import random
-import argparse
 
-from utility import get_geolocation
+import click
+
+from utility import get_geolocation, get_initial_url
 from output import (
     cyan_text, red_text, green_text, yellow_text, magenta_text,
     format_ip_from_parts,
@@ -35,6 +36,7 @@ class CapturedHttp(object):
 
 
 DEFAULT_TIMEOUT = 4
+DEFAULT_PORT = 80
 DEFAULT_PORT_LIST = [80, 8080]
 timeout_used = DEFAULT_TIMEOUT
 
@@ -52,44 +54,41 @@ def get_auth_details(headers, verbose=False):
     return auth_type, realm
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--no-proxy", help="Disable use of proxy servers")
-    parser.add_argument(
-        "--verbose", help="More output")
-    parser.add_argument(
-        "--port-list",
-        help="Specify ports to scan for HTTP. Defaults are {}".format(
-            DEFAULT_PORT_LIST))
-    parser.add_argument("--proxy-file",
-                        help="Specify a file with HTTP proxy servers",
-                        type=str)
-    parser.add_argument("timeout",
-                        help="Specify connection timeout. Default is {}".format(
-                            DEFAULT_TIMEOUT))
-    parser.add_argument(
-        "target", help="IP address within range of network to scan")
-    parser.add_argument(
-        "--scan-port", help="Port to scan on", type=int, default=80)
-    return parser.parse_args()
+@click.command()
+@click.argument('network', type=str)
+@click.option('--timeout', '-t', 'timeout',
+              type=int, default=DEFAULT_TIMEOUT,
+              help=("Specify connection timeout value in seconds. "
+                    "Default: {} seconds".format(DEFAULT_TIMEOUT)))
+@click.option('--verbose', '-v', 'verbose',
+              is_flag=True, default=False,
+              help=("Display additional information. Useful for interactive."))
+@click.option('--port', '-p', 'scan_port',
+              type=int, default=DEFAULT_PORT,
+              help=("Specify specific port to connect to. "
+                    "Default: {}".format(DEFAULT_PORT)))
+def main(network, timeout, verbose, scan_port):
+    """
+    HTTP Harvester - Rattling doorknobs in your local Class C
 
+    Performs simple connection-based scans, attempting to connect
+    to port 80, looking for HTTP servers.
 
-def main():
-    args = parse_args()
-
+    When a server has been found, the reported Server header is shown.
+    """
     hosts_list = []
-    # up_hosts = 0
-    target = args.target
+
+    target = network
     ip_parts = target.split('.')
     copy_ip = ip_parts
     copy_ip[3] = str(0)
+
     scanned_set = set()
 
     # max_time = DEFAULT_TIMEOUT * 254
     total_time = 0
 
-    location = get_geolocation(sys.argv[2])
+    location = get_geolocation(network)
 
     print("\033[44;33;1m  HTTP Harvest Scan on {} | ".format(
         format_ip_from_parts(copy_ip)), end='')
@@ -108,13 +107,13 @@ def main():
         try:
             start_time = time.time()
             print ("{:>16}:{}  |  ".format(
-                format_ip_from_parts(copy_ip),
-                args.scan_port), end="")
+                   format_ip_from_parts(copy_ip),
+                   scan_port), end="")
             sys.stdout.flush()
-            r = requests.get(
-                "http://" + format_ip_from_parts(copy_ip) + ":{}".format(
-                    args.scan_port),
-                timeout=float(args.timeout))
+            ip_str = format_ip_from_parts(copy_ip)
+            initial_url = get_initial_url(ip_str, port=scan_port)
+
+            r = requests.get(initial_url, timeout=float(timeout))
 
             try:
                 server = r.headers['Server']
@@ -158,16 +157,6 @@ def main():
 
     print("\nInfo found for {} hosts".format(len(hosts_list)))
     print("".format())
-    catches = []
-    for h in hosts_list:
-        hostdump = {}
-        hostdump['ip'] = h.ipaddr
-        hostdump['status_code'] = h.status_code
-        if h.cookies != {}:
-            hostdump['cookies'] = dict(h.cookies)
-        if h.headers != {}:
-            hostdump['headers'] = dict(h.headers)
-        catches.append(hostdump)
 
 
 if __name__ == '__main__':

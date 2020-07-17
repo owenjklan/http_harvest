@@ -16,3 +16,7 @@ def get_geolocation(ip, verbose=False):
         r = response.json()
         country = r['timezone']
     return country
+
+
+def get_initial_url(host, scheme="http", port=80):
+    return "{}://{}:{}/".format(scheme, host, port)
