@@ -11,7 +11,7 @@ import click
 from utility import get_geolocation, get_initial_url
 from output import (
     cyan_text, red_text, green_text, yellow_text, magenta_text,
-    format_ip_from_parts,
+    format_ip_from_parts, info_banner, title_banner,
 )
 
 
@@ -90,9 +90,8 @@ def main(network, timeout, verbose, scan_port):
 
     location = get_geolocation(network)
 
-    print("\033[44;33;1m  HTTP Harvest Scan on {} | ".format(
-        format_ip_from_parts(copy_ip)), end='')
-    print("{}  \033[0m".format(location))
+    print(title_banner("  HTTP Harvest Scan on {}  |  {}{}".format(
+          format_ip_from_parts(copy_ip), location, 20 * " ")))
 
     while len(scanned_set) < 254:
         auth_type = auth_realm = None
@@ -106,7 +105,7 @@ def main(network, timeout, verbose, scan_port):
         copy_ip[3] = str(host_byte)
         try:
             start_time = time.time()
-            print ("{:>16}:{}  |  ".format(
+            print ("{:>16}:{:<5}  |  ".format(
                    format_ip_from_parts(copy_ip),
                    scan_port), end="")
             sys.stdout.flush()

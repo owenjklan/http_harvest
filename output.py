@@ -69,6 +69,11 @@ def info_banner(text, html=False):
     return outtext
 
 
+def title_banner(text, html=False):
+    outtext = "\033[44;33;1m{}\033[0m".format(text)
+    return outtext
+
+
 def warning_banner(text, html=False):
     outtext = "\033[35m\033[1m{}\033[0m".format(text)
     return outtext
