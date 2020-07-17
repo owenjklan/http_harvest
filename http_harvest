@@ -7,8 +7,10 @@ import time
 import random
 import argparse
 
+from utility import get_geolocation
 from output import (
-    cyan_text, red_text, green_text, yellow_text, format_ip_from_parts,
+    cyan_text, red_text, green_text, yellow_text, magenta_text,
+    format_ip_from_parts,
 )
 
 
@@ -30,20 +32,6 @@ class CapturedHttp(object):
         except Exception as e:
             outstr = "An exception occurred: {}".format(e)
         return outstr
-
-
-def get_geolocation(ip, verbose=False):
-    GEOIP_URL = "https://ipinfo.io/{}/json".format(ip.strip())
-    if verbose:
-        print(yellow_text("Making GEOIP request: {}".format(GEOIP_URL)))
-    response = requests.get(GEOIP_URL)
-
-    if response.status_code != 200:
-        country = red_text("Error! [ {} ]".format(response.status_code))
-    else:
-        r = response.json()
-        country = r['timezone']
-    return country
 
 
 DEFAULT_TIMEOUT = 4

@@ -32,9 +32,10 @@ class SQLiteOutput(OutputHandler):
         # super(SQLiteOutput, self).__init__():
         pass
 
-## Helper functions for colour
-def yellow_text(text, html=False):
-    outtext = "\033[33m\033[1m{}\033[0m".format(text)
+
+# Helper functions for colour
+def red_text(text, html=False):
+    outtext = "\033[31m\033[1m{}\033[0m".format(text)
     return outtext
 
 
@@ -43,8 +44,18 @@ def green_text(text, html=False):
     return outtext
 
 
-def red_text(text, html=False):
-    outtext = "\033[31m\033[1m{}\033[0m".format(text)
+def yellow_text(text, html=False):
+    outtext = "\033[33m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def blue_text(text, html=False):
+    outtext = "\033[34m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def magenta_text(text, html=False):
+    outtext = "\033[35m\033[1m{}\033[0m".format(text)
     return outtext
 
 
@@ -53,9 +64,26 @@ def cyan_text(text, html=False):
     return outtext
 
 
-def magenta_text(text, html=False):
+def info_banner(text, html=False):
     outtext = "\033[35m\033[1m{}\033[0m".format(text)
     return outtext
+
+
+def warning_banner(text, html=False):
+    outtext = "\033[35m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def error_banner(text, html=False):
+    outtext = "\033[35m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
+def debug_banner(text, html=False):
+    outtext = "\033[35m\033[1m{}\033[0m".format(text)
+    return outtext
+
+
 
 
 def usage(progname):
