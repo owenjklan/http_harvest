@@ -1,6 +1,11 @@
+from __future__ import print_function
+
+import sys
+
+
 class OutputHandler(object):
-    def __init__(self, scan):
-        self.scan = scan
+    def __init__(self):
+        pass
 
     def start_scan(self, scan):
         pass
@@ -8,23 +13,31 @@ class OutputHandler(object):
     def update_scan(self, scan):
         pass
 
-    def finish_scan(self):
+    def finish_scan(self, secs_taken, code):
+        pass
+
+    def bulk_scan_start(self, ip_parts, location=None):
+        pass
+
+    def bulk_scan_end(self, secs_taken, hosts_list=None):
         pass
 
 
 class DefaultOutput(OutputHandler):
-    def __init__(self, scan):
-        super(DefaultOutput, self).__init__(scan)
-        self.scan = scan
+    def __init__(self):
+        super(DefaultOutput, self).__init__()
 
-    def start_scan(self, scan):
-        pass
+    def start_scan(self, ip_parts, base_url, port):
+        print (u"{:>16}:{:<5}  |  ".format(ip_parts, port), end="")
+        sys.stdout.flush()
 
     def update_scan(self, scan):
         pass
 
-    def finish_scan(self):
-        pass
+    def finish_scan(self, scan):
+        print("{:5s}  {:>2.2f}s [{:^20}] ({})  {}".format(
+            scan.status_string, scan.end_time - scan.start_time, scan.server, scan.country,
+            "" if scan.auth_realm is None else scan.auth_realm))
 
 
 class InteractiveConsoleOutput(OutputHandler):

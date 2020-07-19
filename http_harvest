@@ -8,10 +8,12 @@ import random
 
 import click
 
+from action import ScanAction
 from utility import get_geolocation, get_initial_url
 from output import (
     cyan_text, red_text, green_text, yellow_text, magenta_text,
     format_ip_from_parts, info_banner, title_banner,
+    DefaultOutput,
 )
 
 
@@ -39,6 +41,9 @@ DEFAULT_TIMEOUT = 4
 DEFAULT_PORT = 80
 DEFAULT_PORT_LIST = [80, 8080]
 timeout_used = DEFAULT_TIMEOUT
+
+
+output = DefaultOutput()
 
 
 def get_auth_details(headers, verbose=False):
@@ -93,6 +98,7 @@ def main(network, timeout, verbose, scan_port):
     print(title_banner("  HTTP Harvest Scan on {}  |  {}{}".format(
           format_ip_from_parts(copy_ip), location, 20 * " ")))
 
+    # Begin main scan: know beginning IP, geoip
     while len(scanned_set) < 254:
         auth_type = auth_realm = None
         host_byte = random.randint(1, 254)
@@ -104,13 +110,14 @@ def main(network, timeout, verbose, scan_port):
         country = "???"
         copy_ip[3] = str(host_byte)
         try:
-            start_time = time.time()
-            print ("{:>16}:{:<5}  |  ".format(
-                   format_ip_from_parts(copy_ip),
-                   scan_port), end="")
-            sys.stdout.flush()
             ip_str = format_ip_from_parts(copy_ip)
             initial_url = get_initial_url(ip_str, port=scan_port)
+            scan = ScanAction(ip_str, scan_port, "http")
+            # Initial request start
+            start_time = time.time()
+
+            # Use plugin
+            output.start_scan(copy_ip, initial_url, scan_port)
 
             r = requests.get(initial_url, timeout=float(timeout))
 
@@ -122,12 +129,15 @@ def main(network, timeout, verbose, scan_port):
             if r.status_code == 200:
                 status_string = green_text("{:^5s}".format("OK"))
                 country = get_geolocation(format_ip_from_parts(copy_ip))
+                scan.country = country
             elif r.status_code > 400 and r.status_code < 500:
                 status_string = yellow_text("{:^5s}".format(
                     str(r.status_code)))
                 country = get_geolocation(format_ip_from_parts(copy_ip))
                 if r.status_code == 401:
                     auth_type, auth_realm = get_auth_details(r.headers)
+                    scan.auth_realm = auth_realm
+            scan.status_code = r.status_code
 
             hosts_list.append(
                 CapturedHttp(format_ip_from_parts(copy_ip), r)
@@ -143,15 +153,17 @@ def main(network, timeout, verbose, scan_port):
             print(" {}/254 hosts scanned  ***\n".format(len(scanned_set)))
             sys.exit(1)
 
-        scan_time = time.time() - start_time
-        total_time += scan_time
+        scan.status_string = status_string
+        scan.server = server[:19]
+        scan.end_time = time.time() - scan.start_time
+        total_time += (scan.end_time - scan.start_time)
 
-        print("{:5s}  {:>2.2f}s [{:^20}] ({})  {}".format(
-            status_string, scan_time, server[:19], country,
-            "" if auth_realm is None else auth_realm))
-
+        # Individual Scan end
+        output.finish_scan(scan)
         scanned_set.add(host_byte)
 
+    # Bulk scan end:
+    # Total-time in seconds, hosts list
     print("Scan took {:3.1f} minutes".format(total_time / 60))
 
     print("\nInfo found for {} hosts".format(len(hosts_list)))
