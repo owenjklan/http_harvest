@@ -28,7 +28,7 @@ class DefaultOutput(OutputHandler):
         super(DefaultOutput, self).__init__()
 
     def start_scan(self, ip_parts, base_url, port):
-        print (u"{:>16}:{:<5}  |  ".format(ip_parts, port), end="")
+        print (u"{:>16}:{:<5}  |  ".format(".".join(ip_parts), port), end="")
         sys.stdout.flush()
 
     def update_scan(self, scan):

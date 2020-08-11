@@ -143,7 +143,7 @@ def main(network, timeout, verbose, scan_port):
                 CapturedHttp(format_ip_from_parts(copy_ip), r)
             )
         except requests.Timeout as e:
-            status_string = magenta_text("{:^5s}".format("T.O"))
+            status_string = magenta_text("{:^5}".format("T.O"))
         except requests.ConnectionError as e:
             status_string = red_text("{:^5s}".format("C.E"))
         except requests.TooManyRedirects as e:
@@ -155,7 +155,7 @@ def main(network, timeout, verbose, scan_port):
 
         scan.status_string = status_string
         scan.server = server[:19]
-        scan.end_time = time.time() - scan.start_time
+        scan.end_time = time.time()
         total_time += (scan.end_time - scan.start_time)
 
         # Individual Scan end
