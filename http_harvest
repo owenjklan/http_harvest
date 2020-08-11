@@ -127,11 +127,11 @@ def main(network, timeout, verbose, scan_port):
                 pass
 
             if r.status_code == 200:
-                status_string = green_text("{:^5s}".format("OK"))
+                status_string = green_text("{:^5}".format("OK"))
                 country = get_geolocation(format_ip_from_parts(copy_ip))
                 scan.country = country
             elif r.status_code > 400 and r.status_code < 500:
-                status_string = yellow_text("{:^5s}".format(
+                status_string = yellow_text("{:^5}".format(
                     str(r.status_code)))
                 country = get_geolocation(format_ip_from_parts(copy_ip))
                 if r.status_code == 401:
@@ -145,9 +145,9 @@ def main(network, timeout, verbose, scan_port):
         except requests.Timeout as e:
             status_string = magenta_text("{:^5}".format("T.O"))
         except requests.ConnectionError as e:
-            status_string = red_text("{:^5s}".format("C.E"))
+            status_string = red_text("{:^5}".format("C.E"))
         except requests.TooManyRedirects as e:
-            status_string = cyan_text("{:^5s}".format("R.L"))
+            status_string = cyan_text("{:^5}".format("R.L"))
         except KeyboardInterrupt as e:
             print("\n\n  ***  Scan Interrupted  *** ", end='')
             print(" {}/254 hosts scanned  ***\n".format(len(scanned_set)))
