@@ -59,6 +59,11 @@ def get_auth_details(headers, verbose=False):
     return auth_type, realm
 
 
+def summarise_found_hosts(host_list):
+    for host in host_list:
+        print(host)
+
+
 @click.command()
 @click.argument('network', type=str)
 @click.option('--timeout', '-t', 'timeout',
@@ -72,7 +77,10 @@ def get_auth_details(headers, verbose=False):
               type=int, default=DEFAULT_PORT,
               help=("Specify specific port to connect to. "
                     "Default: {}".format(DEFAULT_PORT)))
-def main(network, timeout, verbose, scan_port):
+@click.option('--summarise', '-s', 'summarise',
+              is_flag=True, default=False,
+              help=("Display summary of found hosts at end of scan."))
+def main(network, timeout, verbose, scan_port, summarise):
     """
     HTTP Harvester - Rattling doorknobs in your local Class C
 
@@ -151,6 +159,8 @@ def main(network, timeout, verbose, scan_port):
         except KeyboardInterrupt as e:
             print("\n\n  ***  Scan Interrupted  *** ", end='')
             print(" {}/254 hosts scanned  ***\n".format(len(scanned_set)))
+            if summarise:
+                summarise_found_hosts(hosts_list)
             sys.exit(1)
 
         scan.status_string = status_string
@@ -168,6 +178,9 @@ def main(network, timeout, verbose, scan_port):
 
     print("\nInfo found for {} hosts".format(len(hosts_list)))
     print("".format())
+
+    if summarise:
+        summarise_found_hosts(hosts_list)
 
 
 if __name__ == '__main__':
