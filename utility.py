@@ -14,7 +14,7 @@ def get_geolocation(ip, verbose=False):
         country = red_text("Error! [ {} ]".format(response.status_code))
     else:
         r = response.json()
-        country = r['timezone']
+        country = r['timezone'] if 'timezone' in r else '???'
     return country
 
 

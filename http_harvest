@@ -133,7 +133,7 @@ def main(network, timeout, verbose, scan_port, summarise):
             try:
                 server = r.headers['Server']
             except KeyError:
-                pass
+                server = "???"
 
             if r.status_code == 200:
                 status_string = green_text("{:^5}".format("OK"))

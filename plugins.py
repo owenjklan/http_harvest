@@ -1,9 +1,8 @@
 import requests
 import textwrap
 
-# PLUGINS = {
-#     "test": plugin_test_main,
-# }
+
+PLUGIN_INDENT_WIDTH = 8
 
 
 def dictify_cookies(session):
@@ -22,7 +21,9 @@ def plugin_test_main(scan, session):
 
 
 def plugin_status_main(scan, session):
-    return " [{} - {}]".format(scan.status_code, scan.status_string) if scan.response else ""
+    output_string = " [{} - {}]".format(scan.status_code, scan.status_string) if scan.response else ""
+    return output_string
+
 
 PLUGINS = {
     "test": plugin_test_main,
@@ -38,6 +39,5 @@ def run_all_plugins(scan, session, multiline=True):
     plugin_output = ""
     for plugin in PLUGINS:
         plugin_output += PLUGINS[plugin](scan, session)
-
-    # Indent text block
-    scan.plugin_output = textwrap.indent(8 * " ", plugin_output)
+    plugin_output = textwrap.indent(plugin_output, PLUGIN_INDENT_WIDTH * " ")
+    return plugin_output

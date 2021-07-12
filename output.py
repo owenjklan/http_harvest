@@ -39,7 +39,10 @@ class DefaultOutput(OutputHandler):
             scan.server, scan.country,))
 
         if used_plugins and scan.plugin_output:
-            print(scan.plugin_output)
+            if len(scan.plugin_output.strip()) > 0:
+                print(f"  -- Plugins Output")
+                print(scan.plugin_output)
+                print("")
 
 
 class InteractiveConsoleOutput(OutputHandler):
