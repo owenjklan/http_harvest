@@ -13,6 +13,7 @@ from output import (
     format_ip_from_parts, info_banner, title_banner,
     DefaultOutput,
 )
+import plugins
 
 
 class CapturedHttp(object):
@@ -125,7 +126,9 @@ def main(network, timeout, verbose, scan_port, summarise):
             # Use plugin
             output.start_scan(copy_ip, initial_url, scan_port)
 
-            r = requests.get(initial_url, timeout=float(timeout))
+            session = requests.Session()
+            r = session.get(initial_url, timeout=float(timeout))
+            scan.response = r
 
             try:
                 server = r.headers['Server']
@@ -134,16 +137,22 @@ def main(network, timeout, verbose, scan_port, summarise):
 
             if r.status_code == 200:
                 status_string = green_text("{:^5}".format("OK"))
-                country = get_geolocation(format_ip_from_parts(copy_ip))
-                scan.country = country
+
+                current_ip = format_ip_from_parts(copy_ip)
+                country = get_geolocation(current_ip)
+                scan.country = country if country else "???"
+
+                # Run plugins with current details.
+                scan.plugin_output = plugins.run_all_plugins(scan, session)
             elif r.status_code > 400 and r.status_code < 500:
                 status_string = yellow_text("{:^5}".format(
                     str(r.status_code)))
+
                 country = get_geolocation(format_ip_from_parts(copy_ip))
+
                 if r.status_code == 401:
                     auth_type, auth_realm = get_auth_details(r.headers)
                     scan.auth_realm = auth_realm
-            scan.status_code = r.status_code
 
             hosts_list.append(
                 CapturedHttp(format_ip_from_parts(copy_ip), r)
@@ -161,6 +170,7 @@ def main(network, timeout, verbose, scan_port, summarise):
                 summarise_found_hosts(hosts_list)
             sys.exit(1)
 
+        # Finalise printing status
         scan.status_string = status_string
         scan.server = server[:19]
         scan.end_time = time.time()

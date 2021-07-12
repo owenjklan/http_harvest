@@ -32,10 +32,14 @@ class DefaultOutput(OutputHandler):
     def update_scan(self, scan):
         pass
 
-    def finish_scan(self, scan):
-        print("{:5s}  {:>2.2f}s [{:^20}] ({})  {}".format(
-            scan.status_string, scan.end_time - scan.start_time, scan.server, scan.country,
-            "" if scan.auth_realm is None else scan.auth_realm))
+    def finish_scan(self, scan, used_plugins=True):
+
+        print("{:5s}  {:>2.2f}s [{:^20}] ({})".format(
+            scan.status_string, scan.end_time - scan.start_time,
+            scan.server, scan.country,))
+
+        if used_plugins and scan.plugin_output:
+            print(scan.plugin_output)
 
 
 class InteractiveConsoleOutput(OutputHandler):
